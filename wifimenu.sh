@@ -3,23 +3,27 @@
 INTERFACE="wlan0"
 
 # ROFI_THEME_PATH=""
-TPATH="$HOME/temp/iwd_rofi_menu_files"
+# TPATH="$HOME/temp/iwd_rofi_menu_files"
+TPATH="$HOME/Github/iwd-rofi-wifi-menu/iwd_rofi_menu_files"
 
 RAW_NETWORK_FILE="$TPATH/iwd_rofi_menu_ssid_raw.txt"                    # stores iwctl get-networks output
 NETWORK_FILE="$TPATH/iwd_rofi_menu_ssid_formatted.txt"                  # stores formatted output (SSID,Security,Signal Strength)
 TEMP_PASSWORD_FILE="$TPATH/iwd_rofi_menu_temp_ssid_password.txt"        # stores passphrase
 
-CLEAN_UP_LIST=("$RAW_NETWORK_FILE" \
-                "$NETWORK_FILE" \
-                "$TEMP_PASSWORD_FILE" \
-                "$TPATH" \
+CLEAN_UP_LIST=(
+            "$RAW_NETWORK_FILE" \
+            "$NETWORK_FILE" \
+            "$TEMP_PASSWORD_FILE" \
+            "$TPATH" \
             )
-MENU_OPTIONS=("  Enable Wi-Fi" \
-                "󰖪  Disable Wi-Fi" \
-                "󱚾  Network Metadata" \
-                "󱚸  Scan Networks" \
-                "󱚽  Connect" \
-                "󱛅  Disconnect" \
+MENU_OPTIONS=(
+            "󱛄  Refresh" \
+            "  Enable Wi-Fi" \
+            "󰖪  Disable Wi-Fi" \
+            "󱚾  Network Metadata" \
+            "󱚸  Scan Networks" \
+            "󱚽  Connect" \
+            "󱛅  Disconnect" \
             )
  
 wifi=()                                                                 # stores network info [signal_strength, SSID, (security)]
@@ -189,7 +193,11 @@ function scan() {
     # Loop if 'Rescan' option selected
     local selected_wifi_index=1
     while (( selected_wifi_index == 1 )); do
-        wifi=("󰿅  Exit" "󱛄  Rescan")
+        # If no option is selected 'selected_wifi_index' becomes 0
+        # Adding 0th indexed option to make loop viable
+        wifi=("󰿅  Exit")
+        # Adding option for looping
+        wifi+=("󱛇  Rescan")
         get_networks
         # row number 0 based
         selected_wifi_index=$(printf "%s\n" "${wifi[@]}" | \
@@ -208,18 +216,20 @@ function scan() {
 
 function rofi_cmd() {
     # Appends to 'options' 
-    local options=""
+    local options="${MENU_OPTIONS[0]}"
     local interface_status=$(check_interface_status)
     if [[ "$interface_status" == "OFF" ]]; then
-        options+="${MENU_OPTIONS[0]}"
+        options+="\n${MENU_OPTIONS[1]}"
     else
-        options+="${MENU_OPTIONS[1]}"
+        options+="\n${MENU_OPTIONS[2]}"
 
         local wifi_status=$(check_wifi_status)
         if [[ "$wifi_status" == "OFF" ]]; then
-            options+="\n${MENU_OPTIONS[4]}"
+            options+="\n${MENU_OPTIONS[5]}"
         else
-            options+="\n${MENU_OPTIONS[2]}\n${MENU_OPTIONS[3]}\n${MENU_OPTIONS[5]}"
+            options+="\n${MENU_OPTIONS[3]}"
+            options+="\n${MENU_OPTIONS[4]}"
+            options+="\n${MENU_OPTIONS[6]}"
         fi
     fi
 
@@ -234,26 +244,31 @@ function rofi_cmd() {
 
 function run_cmd() {
     case "$1" in
-        # Turn on Wi-Fi Interface
+        # Refresh menu
         "${MENU_OPTIONS[0]}")
+            sleep 2
+            main
+            ;;
+        # Turn on Wi-Fi Interface
+        "${MENU_OPTIONS[1]}")
             power_on
             main
             ;;
         # Turn off Wi-Fi Interface
-        "${MENU_OPTIONS[1]}")
+        "${MENU_OPTIONS[2]}")
             power_off
             ;;
         # Connection Status
-        "${MENU_OPTIONS[2]}")
+        "${MENU_OPTIONS[3]}")
             wifi_status
             main
             ;;
         # List Networks | Connect
-        "${MENU_OPTIONS[3]}" | "${MENU_OPTIONS[4]}")
+        "${MENU_OPTIONS[4]}" | "${MENU_OPTIONS[5]}")
             scan
             ;;
         # Disconnect
-        "${MENU_OPTIONS[5]}")
+        "${MENU_OPTIONS[6]}")
             iwctl station $INTERFACE disconnect
             ;;
         *)
