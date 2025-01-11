@@ -185,6 +185,10 @@ function helper_wifi_status() {
     iwctl station "$INTERFACE" show > "$RAW_METADATA_FILE"
 
     {
+        # Add Return and Refresh Options
+        echo "󱚷  Return"
+        echo "󱛄  Refresh"
+
         # See iwctl show output
         # Remove non-printable characters, then perform a loop
         local i=1
@@ -240,6 +244,15 @@ function wifi_status() {
             -format i \
     )
 
+    # Return
+    if (( selected_index == 0 )); then
+        return
+    # Refresh
+    elif (( selected_index == 1 )); then
+        wifi_status
+        return
+    fi
+
     # Copies the selected feild into clipboard
     echo "${values["$selected_index"]}" | xclip -selection clipboard
 }
@@ -254,6 +267,7 @@ function scan() {
         wifi=("󱚷  Return")
         # Adding option for looping
         wifi+=("󱛇  Rescan")
+        
         get_networks
         # row number 0 based
         selected_wifi_index=$(
