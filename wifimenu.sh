@@ -58,10 +58,10 @@ function check_interface_status() {
 
 function check_wifi_status() {
     local status=$(iwctl station "$INTERFACE" show | grep 'State' | awk '{print $2}')
-    if [[ "$status" == "connected" ]]; then
-        echo "ON"
-    else
+    if [[ "$status" == "disconnected" ]]; then
         echo "OFF"
+    else
+        echo "ON"
     fi
 }
 
@@ -189,8 +189,8 @@ function helper_wifi_status() {
         # Remove non-printable characters, then perform a loop
         local i=1
         sed $'s/[^[:print:]\t]//g' "$RAW_METADATA_FILE" | while read -r line; do
-            # Skip the first 6 lines
-            if (( i < 7 )); then
+            # Skip the first 5 lines
+            if (( i <= 5 )); then
                 ((i++))
                 continue
             fi
